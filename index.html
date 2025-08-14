@@ -202,6 +202,27 @@ button {
   let croppedImageDataURL = null;
   let latestPosterBlob = null; // store generated image blob for sharing
 
+downloadBtn.disabled = true;
+shareBtn.disabled = true;
+
+function checkInputs() {
+  const fn = firstNameInput.value.trim();
+  const ln = lastNameInput.value.trim();
+  const fileSelected = !!photoInput.files[0];
+
+  if (fn && ln && fileSelected) {
+    downloadBtn.disabled = false;
+    shareBtn.disabled = false;
+  } else {
+    downloadBtn.disabled = true;
+    shareBtn.disabled = true;
+  }
+}
+
+firstNameInput.addEventListener('input', checkInputs);
+lastNameInput.addEventListener('input', checkInputs);
+photoInput.addEventListener('change', checkInputs);
+
   // Update name overlay text live
   function updateName() {
     const fn = firstNameInput.value.trim();
