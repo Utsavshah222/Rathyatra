@@ -86,19 +86,20 @@ button {
 }
 
 .name-overlay {
-  position: absolute;
-  bottom: 28%;
-  left: 50%;
-  transform: translateX(-50%);
-  color: #ffee00;
-  font-size: 8vw;  /* scales with screen width */
-  text-align: center;
-  text-shadow: 2px 2px 5px rgba(0,0,0,0.8);
-  font-family: 'CenturyExpanded', serif;
-  font-weight: bold;
-  width: 90%;
-  word-wrap: break-word; /* prevent overflow for long names */
+    position: absolute;
+    bottom: 28%;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #ffee00;
+    font-size: clamp(24px, 5vw, 80px); /* min 24px, ideal 5vw, max 80px */
+    text-align: center;
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.8);
+    font-family: 'CenturyExpanded', serif;
+    font-weight: bold;
+    width: 90%;
+    word-wrap: break-word;
 }
+
 
 #cropModal {
   position: fixed;
