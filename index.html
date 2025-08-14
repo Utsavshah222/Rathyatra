@@ -247,130 +247,140 @@ photoInput.addEventListener('change', checkInputs);
           viewMode: 1,
           dragMode: 'move',
           guides: false,
-          background: false,
-          cropBoxResizable: false,
-          cropBoxMovable: false,
-        });
+            background: false,
+            cropBoxResizable: false,
+            cropBoxMovable: false,
+          });
+        };
       };
-    };
-    reader.readAsDataURL(file);
-  });
-
-  // Crop and save image data URL
-  cropBtn.addEventListener('click', () => {
-    if (!cropper) return;
-    const canvas = cropper.getCroppedCanvas({ width: 400, height: 400 });
-    croppedImageDataURL = canvas.toDataURL();
-    photoPreview.innerHTML = `<img src="${croppedImageDataURL}" />`;
-    cropper.destroy();
-    cropModal.style.display = 'none';
-  });
-
-  cancelBtn.addEventListener('click', () => {
-    cropper?.destroy();
-    cropModal.style.display = 'none';
-  });
-
-  async function generatePosterBlob(callback) {
-    if (!croppedImageDataURL) {
-      alert('Please upload and crop your photo first.');
+      reader.readAsDataURL(file);
+    });
+  
+    // Crop and save image data URL
+    cropBtn.addEventListener('click', () => {
+      if (!cropper) return;
+      const canvas = cropper.getCroppedCanvas({ width: 400, height: 400 });
+      croppedImageDataURL = canvas.toDataURL();
+      photoPreview.innerHTML = `<img src="${croppedImageDataURL}" />`;
+      cropper.destroy();
+      cropModal.style.display = 'none';
+    });
+  
+    cancelBtn.addEventListener('click', () => {
+      cropper?.destroy();
+      cropModal.style.display = 'none';
+    });
+  
+    async function generatePosterBlob(callback) {
+      if (!croppedImageDataURL) {
+        alert('Please upload and crop your photo first.');
+        return;
+      }
+      const name = nameOverlay.textContent || 'Your Name';
+      const canvas = document.createElement('canvas');
+      canvas.width = 1080;
+      canvas.height = 1920;
+      const ctx = canvas.getContext('2d');
+  
+      const background = new Image();
+      background.crossOrigin = 'anonymous';
+      background.src = 'final.jpg';
+      background.onload = async () => {
+        ctx.drawImage(background, 0, 0, 1080, 1920);
+  
+        const photo = new Image();
+        photo.crossOrigin = 'anonymous';
+        photo.src = croppedImageDataURL;
+        photo.onload = async () => {
+          const size = 605;
+          const x = (1080 - size) / 2;
+          const y = 877 - (size / 2);
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
+          ctx.closePath();
+          ctx.clip();
+          ctx.drawImage(photo, x, y, size, size);
+          ctx.restore();
+  
+          try {
+            await document.fonts.load('bold 20px CenturyExpanded');
+            await document.fonts.ready;
+          } catch {
+            console.warn('CenturyExpanded font failed to load');
+          }
+  
+          const maxWidth = 1000;
+          const maxFontSize = 145;
+          let fontSize = 20;
+          while (fontSize < maxFontSize) {
+            ctx.font = `bold ${fontSize + 1}px 'CenturyExpanded', serif`;
+            if (ctx.measureText(name).width > maxWidth) break;
+            fontSize++;
+          }
+          ctx.font = `bold ${fontSize}px 'CenturyExpanded', serif`;
+          ctx.fillStyle = '#ffee00';
+          ctx.textAlign = 'center';
+          ctx.shadowColor = 'rgba(0,0,0,0.8)';
+          ctx.shadowBlur = 6;
+          ctx.fillText(name, 1080 / 2, 1360);
+  
+          canvas.toBlob(blob => {
+            latestPosterBlob = blob;
+            if (callback) callback(blob);
+          }, 'image/png');
+        };
+      };
+    }
+  
+    function getMissingFields() {
+    const missing = [];
+    if (!firstNameInput.value.trim()) missing.push("First Name");
+    if (!lastNameInput.value.trim()) missing.push("Last Name");
+    if (!photoInput.files[0]) missing.push("Photo");
+    return missing;
+  }
+  
+  downloadBtn.addEventListener('click', () => {
+    const missing = getMissingFields();
+    if (missing.length > 0) {
+      alert("Please fill the following before downloading:\n- " + missing.join("\n- "));
       return;
     }
-    const name = nameOverlay.textContent || 'Your Name';
-    const canvas = document.createElement('canvas');
-    canvas.width = 1080;
-    canvas.height = 1920;
-    const ctx = canvas.getContext('2d');
-
-    const background = new Image();
-    background.crossOrigin = 'anonymous';
-    background.src = 'final.jpg';
-    background.onload = async () => {
-      ctx.drawImage(background, 0, 0, 1080, 1920);
-
-      const photo = new Image();
-      photo.crossOrigin = 'anonymous';
-      photo.src = croppedImageDataURL;
-      photo.onload = async () => {
-        const size = 605;
-        const x = (1080 - size) / 2;
-        const y = 877 - (size / 2);
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
-        ctx.closePath();
-        ctx.clip();
-        ctx.drawImage(photo, x, y, size, size);
-        ctx.restore();
-
-        try {
-          await document.fonts.load('bold 20px CenturyExpanded');
-          await document.fonts.ready;
-        } catch {
-          console.warn('CenturyExpanded font failed to load');
-        }
-
-        const maxWidth = 1000;
-        const maxFontSize = 145;
-        let fontSize = 20;
-        while (fontSize < maxFontSize) {
-          ctx.font = `bold ${fontSize + 1}px 'CenturyExpanded', serif`;
-          if (ctx.measureText(name).width > maxWidth) break;
-          fontSize++;
-        }
-        ctx.font = `bold ${fontSize}px 'CenturyExpanded', serif`;
-        ctx.fillStyle = '#ffee00';
-        ctx.textAlign = 'center';
-        ctx.shadowColor = 'rgba(0,0,0,0.8)';
-        ctx.shadowBlur = 6;
-        ctx.fillText(name, 1080 / 2, 1360);
-
-        canvas.toBlob(blob => {
-          latestPosterBlob = blob;
-          if (callback) callback(blob);
-        }, 'image/png');
-      };
-    };
-  }
-
-  downloadBtn.addEventListener('click', () => {
-  if (downloadBtn.disabled) {
-    alert("Please enter first name, last name, and select a photo before downloading.");
-    return;
-  }
-  generatePosterBlob(blob => {
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'custom-poster.png';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(link.href);
+    generatePosterBlob(blob => {
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'custom-poster.png';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(link.href);
+    });
   });
-});
-
-shareBtn.addEventListener('click', async () => {
-  if (shareBtn.disabled) {
-    alert("Please enter first name, last name, and select a photo before sharing.");
-    return;
-  }
-  generatePosterBlob(async blob => {
-    const file = new File([blob], 'poster.png', { type: 'image/png' });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({
-          files: [file],
-          title: 'My Poster',
-          text: 'Check out my poster!'
-        });
-      } catch (err) {
-        console.error('Share failed:', err);
-      }
-    } else {
-      alert('Image sharing is not supported on this device. Please download and share manually.');
+  
+  shareBtn.addEventListener('click', async () => {
+    const missing = getMissingFields();
+    if (missing.length > 0) {
+      alert("Please fill the following before sharing:\n- " + missing.join("\n- "));
+      return;
     }
+    generatePosterBlob(async blob => {
+      const file = new File([blob], 'poster.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: 'My Poster',
+            text: 'Check out my poster!'
+          });
+        } catch (err) {
+          console.error('Share failed:', err);
+        }
+      } else {
+        alert('Image sharing is not supported on this device. Please download and share manually.');
+      }
+    });
   });
-});
-</script>
+  </script>
 </body>
 </html>
