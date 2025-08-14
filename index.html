@@ -7,26 +7,33 @@
 <link href="https://cdn.jsdelivr.net/npm/cropperjs@1.5.13/dist/cropper.min.css" rel="stylesheet">
 <style>
   @font-face {
-    font-family: 'CenturyExpanded';
-    src: url('CenturyExpanded-Bold.ttf') format('truetype');
-    font-weight: bold;
-    font-style: normal;
-  }
-  body {
+  font-family: 'CenturyExpanded';
+  src: url('CenturyExpanded-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+}
+
+* {
+  box-sizing: border-box; /* ensure no unexpected overflow */
+}
+
+html, body {
+  margin: 0;
   padding: 0;
+  width: 100%;
+  overflow-x: hidden; /* stop horizontal scroll */
   font-family: Arial, sans-serif;
   background: #f4f4f4;
   display: flex;
   flex-direction: column;
   align-items: center;
-  overflow-x: hidden; /* prevent horizontal scroll */
 }
 
 .container {
   width: 100%;
-  max-width: 400px; /* optional max width for large screens */
+  max-width: 400px; /* keeps layout readable on larger screens */
   padding: 1rem;
-  box-sizing: border-box;
+  margin: 0 auto;
 }
 
 input, button {
@@ -36,19 +43,24 @@ input, button {
   font-size: 1rem;
   border: 1px solid #ccc;
   border-radius: 6px;
-  box-sizing: border-box;
 }
-  button {
-    background-color: #007bff; color: white; border: none; cursor: pointer;
-  }
-  #shareBtn {
-    background-color: #25D366;
-  }
-  .poster-container {
+
+button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+#shareBtn {
+  background-color: #25D366;
+}
+
+.poster-container {
   position: relative;
-  width: 100%; /* full width of container */
-  padding-top: 177.87%; /* aspect ratio 375:667 -> 667/375*100 */
-  margin: 1rem auto;
+  width: 100%;
+  padding-top: 177.87%; /* keeps 375:667 aspect ratio */
+  margin: 1rem 0;
   background: url('final.jpg') no-repeat center center;
   background-size: cover;
   overflow: hidden;
@@ -59,47 +71,88 @@ input, button {
   position: absolute;
   top: 45.7%;
   left: 50%;
-  width: 56%; /* responsive size relative to poster */
-  aspect-ratio: 1/1;
+  width: 56%;         /* scales with poster */
+  aspect-ratio: 1/1;  /* keeps square shape */
   transform: translate(-50%, -50%);
   border-radius: 50%;
   overflow: hidden;
   background: #ccc;
 }
-  .circle-photo img {
-    width: 100%; height: 100%; object-fit: cover;
-  }
-  .name-overlay {
+
+.circle-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.name-overlay {
   position: absolute;
-  bottom: 28%; /* adjusted for responsive height */
+  bottom: 28%;
   left: 50%;
   transform: translateX(-50%);
   color: #ffee00;
-  font-size: 8vw; /* scalable font size */
+  font-size: 8vw;  /* scales with screen width */
   text-align: center;
   text-shadow: 2px 2px 5px rgba(0,0,0,0.8);
   font-family: 'CenturyExpanded', serif;
   font-weight: bold;
   width: 90%;
+  word-wrap: break-word; /* prevent overflow for long names */
 }
-  #cropModal {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.8);
-    display: none; align-items: center; justify-content: center; z-index: 1000;
+
+#cropModal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+#cropModal .modal-content {
+  background: white;
+  padding: 1rem;
+  position: relative;
+  max-width: 90%;
+}
+
+#cropImage {
+  max-width: 100%;
+  max-height: 400px;
+  display: block;
+  margin: 0 auto;
+}
+
+.overlay-circle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200px;
+  height: 200px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
+  pointer-events: none;
+}
+
+.buttons {
+  margin-top: 1rem;
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+/* Optional: make buttons and inputs look good on very small devices */
+@media (max-width: 320px) {
+  input, button {
+    font-size: 0.9rem;
+    padding: 0.6rem;
   }
-  #cropModal .modal-content {
-    background: white; padding: 1rem; position: relative; max-width: 90%;
+  .name-overlay {
+    font-size: 9vw;
   }
-  #cropImage {
-    max-width: 100%; max-height: 400px; display: block; margin: 0 auto;
-  }
-  .overlay-circle {
-    position: absolute; top: 50%; left: 50%; width: 200px; height: 200px;
-    transform: translate(-50%, -50%); border-radius: 50%;
-    box-shadow: 0 0 0 9999px rgba(0,0,0,0.5); pointer-events: none;
-  }
-  .buttons {
-    margin-top: 1rem; display: flex; gap: 1rem; justify-content: flex-end;
-  }
+}
 </style>
 </head>
 <body>
