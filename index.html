@@ -334,35 +334,43 @@ photoInput.addEventListener('change', checkInputs);
   }
 
   downloadBtn.addEventListener('click', () => {
-    generatePosterBlob(blob => {
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = 'custom-poster.png';
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(link.href);
-    });
+  if (downloadBtn.disabled) {
+    alert("Please enter first name, last name, and select a photo before downloading.");
+    return;
+  }
+  generatePosterBlob(blob => {
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'custom-poster.png';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(link.href);
   });
+});
 
-  shareBtn.addEventListener('click', async () => {
-    generatePosterBlob(async blob => {
-      const file = new File([blob], 'poster.png', { type: 'image/png' });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({
-            files: [file],
-            title: 'My Poster',
-            text: 'Check out my poster!'
-          });
-        } catch (err) {
-          console.error('Share failed:', err);
-        }
-      } else {
-        alert('Image sharing is not supported on this device. Please download and share manually.');
+shareBtn.addEventListener('click', async () => {
+  if (shareBtn.disabled) {
+    alert("Please enter first name, last name, and select a photo before sharing.");
+    return;
+  }
+  generatePosterBlob(async blob => {
+    const file = new File([blob], 'poster.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: 'My Poster',
+          text: 'Check out my poster!'
+        });
+      } catch (err) {
+        console.error('Share failed:', err);
       }
-    });
+    } else {
+      alert('Image sharing is not supported on this device. Please download and share manually.');
+    }
   });
+});
 </script>
 </body>
 </html>
