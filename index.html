@@ -225,173 +225,157 @@ button {
 <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.5.13/dist/cropper.min.js"></script>
 
 <script>
-  const firstNameInput = document.getElementById('firstName');
-  const lastNameInput = document.getElementById('lastName');
-  const nameOverlay = document.getElementById('nameOverlay');
-  const photoInput = document.getElementById('photoInput');
-  const photoPreview = document.getElementById('photoPreview');
-  const downloadBtn = document.getElementById('downloadBtn');
-  const shareBtn = document.getElementById('shareBtn');
-  const cropModal = document.getElementById('cropModal');
-  const cropImage = document.getElementById('cropImage');
-  const cropBtn = document.getElementById('cropBtn');
-  const cancelBtn = document.getElementById('cancelBtn');
- 
-  function showPopup(message) {
-    const popup = document.getElementById('infoPopup');
-    const popupText = document.getElementById('popupText');
-    popupText.textContent = message;
-    popup.style.display = 'flex';
-  }
+const firstNameInput = document.getElementById('firstName');
+const lastNameInput = document.getElementById('lastName');
+const nameOverlay = document.getElementById('nameOverlay');
+const photoInput = document.getElementById('photoInput');
+const photoPreview = document.getElementById('photoPreview');
+const downloadBtn = document.getElementById('downloadBtn');
+const shareBtn = document.getElementById('shareBtn');
+const cropModal = document.getElementById('cropModal');
+const cropImage = document.getElementById('cropImage');
+const cropBtn = document.getElementById('cropBtn');
+const cancelBtn = document.getElementById('cancelBtn');
 
-  // Close button for popup
-  document.getElementById('popupClose').addEventListener('click', () => {
-    document.getElementById('infoPopup').style.display = 'none';
-  });
+let cropper;
+let croppedImageDataURL = null;
+let latestPosterBlob = null; // store generated image blob for sharing
 
-  let cropper;
-  let croppedImageDataURL = null;
-  let latestPosterBlob = null; // store generated image blob for sharing
-
-downloadBtn.disabled = true;
-shareBtn.disabled = true;
-
-function checkInputs() {
-  const fn = firstNameInput.value.trim();
-  const ln = lastNameInput.value.trim();
-  const fileSelected = !!photoInput.files[0];
-
-  if (fn && ln && fileSelected) {
-    downloadBtn.disabled = false;
-    shareBtn.disabled = false;
-  } else {
-    downloadBtn.disabled = true;
-    shareBtn.disabled = true;
-  }
+// Show popup function
+function showPopup(message) {
+  const popup = document.getElementById('infoPopup');
+  const popupText = document.getElementById('popupText');
+  popupText.textContent = message;
+  popup.style.display = 'flex';
 }
 
-firstNameInput.addEventListener('input', checkInputs);
-lastNameInput.addEventListener('input', checkInputs);
-photoInput.addEventListener('change', checkInputs);
+// Close button for popup
+document.getElementById('popupClose').addEventListener('click', () => {
+  document.getElementById('infoPopup').style.display = 'none';
+});
 
-  // Update name overlay text live
-  function updateName() {
-    const fn = firstNameInput.value.trim();
-    const ln = lastNameInput.value.trim();
-    nameOverlay.textContent = (fn || ln) ? `${fn} ${ln}`.trim() : 'Your Name';
-  }
-  firstNameInput.addEventListener('input', updateName);
-  lastNameInput.addEventListener('input', updateName);
+// Update name overlay live
+function updateName() {
+  const fn = firstNameInput.value.trim();
+  const ln = lastNameInput.value.trim();
+  nameOverlay.textContent = (fn || ln) ? `${fn} ${ln}`.trim() : 'Your Name';
+}
+firstNameInput.addEventListener('input', updateName);
+lastNameInput.addEventListener('input', updateName);
 
-  // Open crop modal on photo select
-  photoInput.addEventListener('change', e => {
-    const file = e.target.files[0];
-    if (!file || !file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      cropImage.src = ev.target.result;
-      cropModal.style.display = 'flex';
-      cropImage.onload = () => {
-        cropper?.destroy();
-        cropper = new Cropper(cropImage, {
-          aspectRatio: 1,
-          viewMode: 1,
-          dragMode: 'move',
-          guides: false,
-            background: false,
-            cropBoxResizable: false,
-            cropBoxMovable: false,
-          });
-        };
-      };
-      reader.readAsDataURL(file);
-    });
-  
-    // Crop and save image data URL
-    cropBtn.addEventListener('click', () => {
-      if (!cropper) return;
-      const canvas = cropper.getCroppedCanvas({ width: 400, height: 400 });
-      croppedImageDataURL = canvas.toDataURL();
-      photoPreview.innerHTML = `<img src="${croppedImageDataURL}" />`;
-      cropper.destroy();
-      cropModal.style.display = 'none';
-    });
-  
-    cancelBtn.addEventListener('click', () => {
+// Open crop modal on photo select
+photoInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file || !file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    cropImage.src = ev.target.result;
+    cropModal.style.display = 'flex';
+    cropImage.onload = () => {
       cropper?.destroy();
-      cropModal.style.display = 'none';
-    });
-  
-    async function generatePosterBlob(callback) {
-      if (!croppedImageDataURL) {
-        alert('Please upload and crop your photo first.');
-        return;
-      }
-      const name = nameOverlay.textContent || 'Your Name';
-      const canvas = document.createElement('canvas');
-      canvas.width = 1080;
-      canvas.height = 1920;
-      const ctx = canvas.getContext('2d');
-  
-      const background = new Image();
-      background.crossOrigin = 'anonymous';
-      background.src = 'final.jpg';
-      background.onload = async () => {
-        ctx.drawImage(background, 0, 0, 1080, 1920);
-  
-        const photo = new Image();
-        photo.crossOrigin = 'anonymous';
-        photo.src = croppedImageDataURL;
-        photo.onload = async () => {
-          const size = 605;
-          const x = (1080 - size) / 2;
-          const y = 877 - (size / 2);
-          ctx.save();
-          ctx.beginPath();
-          ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
-          ctx.closePath();
-          ctx.clip();
-          ctx.drawImage(photo, x, y, size, size);
-          ctx.restore();
-  
-          try {
-            await document.fonts.load('bold 20px CenturyExpanded');
-            await document.fonts.ready;
-          } catch {
-            console.warn('CenturyExpanded font failed to load');
-          }
-  
-          const maxWidth = 1000;
-          const maxFontSize = 145;
-          let fontSize = 20;
-          while (fontSize < maxFontSize) {
-            ctx.font = `bold ${fontSize + 1}px 'CenturyExpanded', serif`;
-            if (ctx.measureText(name).width > maxWidth) break;
-            fontSize++;
-          }
-          ctx.font = `bold ${fontSize}px 'CenturyExpanded', serif`;
-          ctx.fillStyle = '#ffee00';
-          ctx.textAlign = 'center';
-          ctx.shadowColor = 'rgba(0,0,0,0.8)';
-          ctx.shadowBlur = 6;
-          ctx.fillText(name, 1080 / 2, 1360);
-  
-          canvas.toBlob(blob => {
-            latestPosterBlob = blob;
-            if (callback) callback(blob);
-          }, 'image/png');
-        };
-      };
-    }
-  
-    function getMissingFields() {
-    const missing = [];
-    if (!firstNameInput.value.trim()) missing.push("First Name");
-    if (!lastNameInput.value.trim()) missing.push("Last Name");
-    if (!photoInput.files[0]) missing.push("Photo");
-    return missing;
+      cropper = new Cropper(cropImage, {
+        aspectRatio: 1,
+        viewMode: 1,
+        dragMode: 'move',
+        guides: false,
+        background: false,
+        cropBoxResizable: false,
+        cropBoxMovable: false,
+      });
+    };
+  };
+  reader.readAsDataURL(file);
+});
+
+// Crop and save image data URL
+cropBtn.addEventListener('click', () => {
+  if (!cropper) return;
+  const canvas = cropper.getCroppedCanvas({ width: 400, height: 400 });
+  croppedImageDataURL = canvas.toDataURL();
+  photoPreview.innerHTML = `<img src="${croppedImageDataURL}" />`;
+  cropper.destroy();
+  cropModal.style.display = 'none';
+});
+
+// Cancel cropping
+cancelBtn.addEventListener('click', () => {
+  cropper?.destroy();
+  cropModal.style.display = 'none';
+});
+
+// Generate poster as blob
+async function generatePosterBlob(callback) {
+  if (!croppedImageDataURL) {
+    showPopup('Please upload and crop your photo first.');
+    return;
   }
-  
+  const name = nameOverlay.textContent || 'Your Name';
+  const canvas = document.createElement('canvas');
+  canvas.width = 1080;
+  canvas.height = 1920;
+  const ctx = canvas.getContext('2d');
+
+  const background = new Image();
+  background.crossOrigin = 'anonymous';
+  background.src = 'final.jpg';
+  background.onload = async () => {
+    ctx.drawImage(background, 0, 0, 1080, 1920);
+
+    const photo = new Image();
+    photo.crossOrigin = 'anonymous';
+    photo.src = croppedImageDataURL;
+    photo.onload = async () => {
+      const size = 605;
+      const x = (1080 - size) / 2;
+      const y = 877 - (size / 2);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(photo, x, y, size, size);
+      ctx.restore();
+
+      try {
+        await document.fonts.load('bold 20px CenturyExpanded');
+        await document.fonts.ready;
+      } catch {
+        console.warn('CenturyExpanded font failed to load');
+      }
+
+      const maxWidth = 1000;
+      const maxFontSize = 145;
+      let fontSize = 20;
+      while (fontSize < maxFontSize) {
+        ctx.font = `bold ${fontSize + 1}px 'CenturyExpanded', serif`;
+        if (ctx.measureText(name).width > maxWidth) break;
+        fontSize++;
+      }
+      ctx.font = `bold ${fontSize}px 'CenturyExpanded', serif`;
+      ctx.fillStyle = '#ffee00';
+      ctx.textAlign = 'center';
+      ctx.shadowColor = 'rgba(0,0,0,0.8)';
+      ctx.shadowBlur = 6;
+      ctx.fillText(name, 1080 / 2, 1360);
+
+      canvas.toBlob(blob => {
+        latestPosterBlob = blob;
+        if (callback) callback(blob);
+      }, 'image/png');
+    };
+  };
+}
+
+// Check missing fields
+function getMissingFields() {
+  const missing = [];
+  if (!firstNameInput.value.trim()) missing.push("First Name");
+  if (!lastNameInput.value.trim()) missing.push("Last Name");
+  if (!photoInput.files[0]) missing.push("Photo");
+  return missing;
+}
+
+// Download button
 downloadBtn.addEventListener('click', () => {
   const missing = getMissingFields();
   if (missing.length > 0) {
@@ -409,6 +393,7 @@ downloadBtn.addEventListener('click', () => {
   });
 });
 
+// Share button
 shareBtn.addEventListener('click', async () => {
   const missing = getMissingFields();
   if (missing.length > 0) {
@@ -432,7 +417,6 @@ shareBtn.addEventListener('click', async () => {
     }
   });
 });
-
-  </script>
+</script>
 </body>
 </html>
