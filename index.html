@@ -154,6 +154,38 @@ button {
     font-size: 9vw;
   }
 }
+  .popup {
+  display: none; /* hidden by default */
+  position: fixed;
+  z-index: 2000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.6);
+  align-items: center;
+  justify-content: center;
+}
+
+.popup-content {
+  background-color: #fff;
+  padding: 1rem 1.5rem;
+  border-radius: 10px;
+  max-width: 80%;
+  text-align: center;
+  font-size: 1rem;
+  color: #333;
+  position: relative;
+}
+
+#popupClose {
+  position: absolute;
+  top: 0.5rem;
+  right: 1rem;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
 </style>
 </head>
 <body>
@@ -181,6 +213,13 @@ button {
     </div>
   </div>
 </div>
+  <div id="infoPopup" class="popup">
+  <div class="popup-content">
+    <span id="popupClose">&times;</span>
+    <p id="popupText"></p>
+  </div>
+</div>
+
 
 <!-- Include Cropper.js -->
 <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.5.13/dist/cropper.min.js"></script>
@@ -197,6 +236,18 @@ button {
   const cropImage = document.getElementById('cropImage');
   const cropBtn = document.getElementById('cropBtn');
   const cancelBtn = document.getElementById('cancelBtn');
+ 
+  function showPopup(message) {
+    const popup = document.getElementById('infoPopup');
+    const popupText = document.getElementById('popupText');
+    popupText.textContent = message;
+    popup.style.display = 'flex';
+  }
+
+  // Close button for popup
+  document.getElementById('popupClose').addEventListener('click', () => {
+    document.getElementById('infoPopup').style.display = 'none';
+  });
 
   let cropper;
   let croppedImageDataURL = null;
@@ -341,46 +392,47 @@ photoInput.addEventListener('change', checkInputs);
     return missing;
   }
   
-  downloadBtn.addEventListener('click', () => {
-    const missing = getMissingFields();
-    if (missing.length > 0) {
-      alert("Please fill the following before downloading:\n- " + missing.join("\n- "));
-      return;
-    }
-    generatePosterBlob(blob => {
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = 'custom-poster.png';
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(link.href);
-    });
+downloadBtn.addEventListener('click', () => {
+  const missing = getMissingFields();
+  if (missing.length > 0) {
+    showPopup("Please fill the following before downloading:\n- " + missing.join("\n- "));
+    return;
+  }
+  generatePosterBlob(blob => {
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'custom-poster.png';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(link.href);
   });
-  
-  shareBtn.addEventListener('click', async () => {
-    const missing = getMissingFields();
-    if (missing.length > 0) {
-      alert("Please fill the following before sharing:\n- " + missing.join("\n- "));
-      return;
-    }
-    generatePosterBlob(async blob => {
-      const file = new File([blob], 'poster.png', { type: 'image/png' });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({
-            files: [file],
-            title: 'My Poster',
-            text: 'Check out my poster!'
-          });
-        } catch (err) {
-          console.error('Share failed:', err);
-        }
-      } else {
-        alert('Image sharing is not supported on this device. Please download and share manually.');
+});
+
+shareBtn.addEventListener('click', async () => {
+  const missing = getMissingFields();
+  if (missing.length > 0) {
+    showPopup("Please fill the following before sharing:\n- " + missing.join("\n- "));
+    return;
+  }
+  generatePosterBlob(async blob => {
+    const file = new File([blob], 'poster.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: 'My Poster',
+          text: 'Check out my poster!'
+        });
+      } catch (err) {
+        console.error('Share failed:', err);
       }
-    });
+    } else {
+      showPopup('Image sharing is not supported on this device. Please download and share manually.');
+    }
   });
+});
+
   </script>
 </body>
 </html>
